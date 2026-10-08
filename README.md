@@ -324,7 +324,7 @@ The SQL analysis was converted into an interactive Power BI dashboard focused on
 
 ### Dashboard Preview
 
-![E-Commerce Analytics Dashboard](images/dashboard.png)
+![E-Commerce Analytics Dashboard](images/WhatsApp%20Image%202026-10-06%20at%205.14.50%20PM.jpeg)
 
 ---
 
