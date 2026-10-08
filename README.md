@@ -22,408 +22,117 @@ The analysis focuses on questions such as:
 
 ## Business Problems & SQL Analysis
 
-The SQL analysis was built around practical business questions related to sales, customers, products, payments and delivery performance.
-
-### 1. What is the overall sales and order performance?
+### 1. What is the total sales and order performance?
 
 ```sql
-WITH order_sales AS (
-    SELECT
-        order_id,
-        SUM(price) AS total_sales,
-        SUM(freight_value) AS total_freight
-    FROM order_items
-    GROUP BY order_id
-)
-
 SELECT
-    COUNT(o.order_id) AS total_orders,
-
-    COUNT(*) FILTER (
-        WHERE o.order_status = 'delivered'
-    ) AS delivered_orders,
-
-    COUNT(*) FILTER (
-        WHERE o.order_status = 'canceled'
-    ) AS canceled_orders,
-
-    ROUND(
-        COALESCE(SUM(s.total_sales), 0)::numeric,
-        2
-    ) AS total_sales,
-
-    ROUND(
-        COALESCE(SUM(s.total_freight), 0)::numeric,
-        2
-    ) AS total_freight,
-
-    ROUND(
-        AVG(s.total_sales)::numeric,
-        2
-    ) AS average_order_value
-
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    SUM(oi.price) AS total_sales
 FROM orders o
-LEFT JOIN order_sales s
-    ON o.order_id = s.order_id;
+JOIN order_items oi
+    ON o.order_id = oi.order_id
+WHERE o.order_status = 'delivered';
 ```
 
-### 2. Which product categories generate the most sales?
+### 2. Which product categories generate the highest sales?
 
 ```sql
 SELECT
-    COALESCE(
-        NULLIF(TRIM(c.product_category_name_english), ''),
-        NULLIF(TRIM(p.product_category_name), ''),
-        'Unknown'
-    ) AS product_category,
-
-    COUNT(DISTINCT i.order_id) AS total_orders,
-
-    COUNT(*) AS items_sold,
-
-    ROUND(
-        SUM(i.price)::numeric,
-        2
-    ) AS total_sales,
-
-    ROUND(
-        SUM(i.freight_value)::numeric,
-        2
-    ) AS total_freight
-
-FROM order_items i
-
+    p.product_category_name,
+    SUM(oi.price) AS total_sales
+FROM order_items oi
 JOIN orders o
-    ON i.order_id = o.order_id
-
+    ON oi.order_id = o.order_id
 JOIN products p
-    ON i.product_id = p.product_id
-
-LEFT JOIN category_translation c
-    ON p.product_category_name = c.product_category_name
-
+    ON oi.product_id = p.product_id
 WHERE o.order_status = 'delivered'
-
-GROUP BY 1
-
+GROUP BY p.product_category_name
 ORDER BY total_sales DESC;
 ```
 
 ### 3. Which states contribute the most sales?
 
 ```sql
-WITH order_sales AS (
-    SELECT
-        order_id,
-        SUM(price) AS total_sales
-    FROM order_items
-    GROUP BY order_id
-)
-
 SELECT
     c.customer_state,
-
-    COUNT(DISTINCT o.order_id) AS total_orders,
-
-    COUNT(DISTINCT c.customer_id) AS total_customers,
-
-    ROUND(
-        COALESCE(SUM(os.total_sales), 0)::numeric,
-        2
-    ) AS total_sales,
-
-    ROUND(
-        AVG(os.total_sales)::numeric,
-        2
-    ) AS average_order_value
-
+    SUM(oi.price) AS total_sales
 FROM orders o
-
 JOIN customers c
     ON o.customer_id = c.customer_id
-
-LEFT JOIN order_sales os
-    ON o.order_id = os.order_id
-
+JOIN order_items oi
+    ON o.order_id = oi.order_id
 WHERE o.order_status = 'delivered'
-
 GROUP BY c.customer_state
-
 ORDER BY total_sales DESC;
 ```
 
-### 4. Which payment methods are most widely used?
+### 4. Which payment methods generate the most payment value?
 
 ```sql
 SELECT
-    p.payment_type,
-
-    COUNT(DISTINCT p.order_id) AS total_orders,
-
-    ROUND(
-        SUM(p.payment_value)::numeric,
-        2
-    ) AS total_payment_value,
-
-    ROUND(
-        AVG(p.payment_value)::numeric,
-        2
-    ) AS average_payment_value,
-
-    ROUND(
-        AVG(p.payment_installments)::numeric,
-        2
-    ) AS average_installments
-
-FROM payments p
-
-JOIN orders o
-    ON p.order_id = o.order_id
-
-WHERE o.order_status = 'delivered'
-
-GROUP BY p.payment_type
-
+    payment_type,
+    SUM(payment_value) AS total_payment_value
+FROM payments
+GROUP BY payment_type
 ORDER BY total_payment_value DESC;
 ```
 
-### 5. How efficient is the delivery operation?
+### 5. What is the distribution of order statuses?
 
 ```sql
 SELECT
-    COUNT(*) AS total_orders,
-
-    COUNT(*) FILTER (
-        WHERE order_delivered_customer_date
-              <= order_estimated_delivery_date
-    ) AS on_time_orders,
-
-    COUNT(*) FILTER (
-        WHERE order_delivered_customer_date
-              > order_estimated_delivery_date
-    ) AS late_orders,
-
-    ROUND(
-        COUNT(*) FILTER (
-            WHERE order_delivered_customer_date
-                  <= order_estimated_delivery_date
-        ) * 100.0
-        / NULLIF(COUNT(*), 0),
-        2
-    ) AS on_time_delivery_percentage
-
+    order_status,
+    COUNT(*) AS total_orders
 FROM orders
-
-WHERE order_status = 'delivered'
-
-  AND order_delivered_customer_date IS NOT NULL
-
-  AND order_estimated_delivery_date IS NOT NULL;
+GROUP BY order_status
+ORDER BY total_orders DESC;
 ```
 
-### 6. Are customers making repeat purchases?
+### 6. How are customer reviews distributed?
 
 ```sql
-WITH customer_orders AS (
-    SELECT
-        o.customer_id,
-
-        COUNT(DISTINCT o.order_id) AS total_orders,
-
-        SUM(oi.price) AS total_sales
-
-    FROM orders o
-
-    JOIN order_items oi
-        ON o.order_id = oi.order_id
-
-    WHERE o.order_status = 'delivered'
-
-    GROUP BY o.customer_id
-)
-
 SELECT
-
-    CASE
-        WHEN total_orders = 1 THEN '1 Order'
-        WHEN total_orders = 2 THEN '2 Orders'
-        ELSE '3+ Orders'
-    END AS customer_order_group,
-
-    COUNT(*) AS total_customers,
-
-    ROUND(
-        SUM(total_sales)::numeric,
-        2
-    ) AS total_sales,
-
-    ROUND(
-        AVG(total_sales)::numeric,
-        2
-    ) AS avg_sales_per_customer
-
-FROM customer_orders
-
-GROUP BY
-    CASE
-        WHEN total_orders = 1 THEN '1 Order'
-        WHEN total_orders = 2 THEN '2 Orders'
-        ELSE '3+ Orders'
-    END
-
-ORDER BY MIN(total_orders);
+    review_score,
+    COUNT(*) AS total_reviews
+FROM reviews
+GROUP BY review_score
+ORDER BY review_score DESC;
 ```
 
-### 7. How are customers distributed by RFM value?
+### 7. What is the average delivery time?
 
 ```sql
-WITH customer_rfm AS (
-    SELECT
-        o.customer_id,
+SELECT
+    ROUND(
+        AVG(
+            EXTRACT(
+                EPOCH FROM (
+                    order_delivered_customer_date
+                    - order_purchase_timestamp
+                )
+            ) / 86400
+        )::numeric,
+        2
+    ) AS avg_delivery_days
+FROM orders
+WHERE order_status = 'delivered'
+  AND order_delivered_customer_date IS NOT NULL;
+```
 
-        MAX(o.order_purchase_timestamp) AS last_order_date,
+### 8. Which customers are repeat customers?
 
-        COUNT(DISTINCT o.order_id) AS frequency,
-
-        SUM(oi.price) AS monetary
-
-    FROM orders o
-
-    JOIN order_items oi
-        ON o.order_id = oi.order_id
-
-    WHERE o.order_status = 'delivered'
-
-    GROUP BY o.customer_id
-),
-
-rfm_scores AS (
-    SELECT
-        customer_id,
-
-        last_order_date,
-
-        frequency,
-
-        monetary,
-
-        NTILE(5) OVER (
-            ORDER BY last_order_date DESC
-        ) AS recency_score,
-
-        NTILE(5) OVER (
-            ORDER BY frequency
-        ) AS frequency_score,
-
-        NTILE(5) OVER (
-            ORDER BY monetary
-        ) AS monetary_score
-
-    FROM customer_rfm
-)
-
+```sql
 SELECT
     customer_id,
-
-    last_order_date,
-
-    frequency,
-
-    ROUND(
-        monetary::numeric,
-        2
-    ) AS monetary,
-
-    CASE
-
-        WHEN recency_score >= 4
-         AND frequency_score >= 4
-         AND monetary_score >= 4
-            THEN 'High Value Customers'
-
-        WHEN frequency_score >= 4
-            THEN 'Frequent Customers'
-
-        WHEN recency_score >= 4
-            THEN 'Recent Customers'
-
-        WHEN recency_score <= 2
-         AND frequency_score <= 2
-            THEN 'At-Risk / Inactive Customers'
-
-        ELSE 'Regular Customers'
-
-    END AS customer_segment
-
-FROM rfm_scores
-
-ORDER BY monetary DESC;
+    COUNT(DISTINCT order_id) AS total_orders
+FROM orders
+WHERE order_status = 'delivered'
+GROUP BY customer_id
+HAVING COUNT(DISTINCT order_id) > 1;
 ```
 
-### 8. Does delivery delay relate to lower review scores?
-
-```sql
-WITH delivery_reviews AS (
-    SELECT
-        r.review_score,
-
-        EXTRACT(
-            EPOCH FROM (
-                o.order_delivered_customer_date
-                - o.order_estimated_delivery_date
-            )
-        ) / 86400.0 AS delay_days
-
-    FROM reviews r
-
-    JOIN orders o
-        ON r.order_id = o.order_id
-
-    WHERE o.order_status = 'delivered'
-
-      AND o.order_delivered_customer_date IS NOT NULL
-
-      AND o.order_estimated_delivery_date IS NOT NULL
-)
-
-SELECT
-
-    CASE
-        WHEN delay_days <= 0
-            THEN 'On Time / Early'
-
-        WHEN delay_days <= 3
-            THEN '1-3 Days Late'
-
-        WHEN delay_days <= 7
-            THEN '4-7 Days Late'
-
-        ELSE 'More Than 7 Days Late'
-    END AS delivery_status,
-
-    COUNT(*) AS total_reviews,
-
-    ROUND(
-        AVG(review_score)::numeric,
-        2
-    ) AS average_review_score
-
-FROM delivery_reviews
-
-GROUP BY 1
-
-ORDER BY
-    CASE
-        WHEN MIN(delay_days) <= 0 THEN 1
-        WHEN MIN(delay_days) <= 3 THEN 2
-        WHEN MIN(delay_days) <= 7 THEN 3
-        ELSE 4
-    END;
-```
-
+> The complete SQL analysis is available in [`sql/summery.sql`](sql/summery.sql).
 ### Complete SQL Analysis
-
-The complete set of SQL queries covering sales, products, customers, sellers, payments, reviews, delivery and customer segmentation is available in [`sql/summery.sql`](sql/summery.sql).
 
 ## 📊 Project Highlights
 
