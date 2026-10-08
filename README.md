@@ -16,9 +16,6 @@ The focus was not just on creating charts, but on answering practical business q
 
 ---
 
-## 🎯 Business Questions
-
-The analysis focuses on questions such as:
 
 ## Business Problems & SQL Analysis
 
