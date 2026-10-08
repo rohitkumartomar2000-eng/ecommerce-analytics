@@ -366,7 +366,7 @@ The analysis helps identify:
 
 ## 👤 Author
 
-### Rohit Tomar
+### Rohit Kumar
 
 **Data Analytics | SQL | Power BI | Excel**
 
