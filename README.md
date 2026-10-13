@@ -147,7 +147,7 @@ HAVING COUNT(DISTINCT order_id) > 1;
 
 ---
 
-## 🗂️ Dataset
+##  Dataset
 
 The project uses the **Olist Brazilian E-Commerce dataset**.
 
@@ -167,7 +167,7 @@ This allows the project to look at the business from both the **commercial side*
 
 ---
 
-## 🔗 Data Model
+## Data Model
 
 The main relationships used in the analysis can be represented as:
 
@@ -207,7 +207,7 @@ Where required, order counts were calculated using distinct `order_id` to avoid 
 
 ---
 
-## 🧹 Data Preparation
+##  Data Preparation
 
 Before analysis, the datasets were prepared and checked for consistency.
 
@@ -226,7 +226,7 @@ The goal was to make the analysis consistent across SQL and Power BI.
 
 ---
 
-## 🧮 SQL Analysis
+##  SQL Analysis
 
 SQL was used to answer detailed business questions across multiple areas.
 
@@ -289,7 +289,7 @@ SQL was used to answer detailed business questions across multiple areas.
 
 ---
 
-## 📈 Power BI Dashboard
+## Power BI Dashboard
 
 The SQL analysis was converted into an interactive Power BI dashboard focused on the most important business metrics.
 
@@ -325,7 +325,7 @@ The SQL analysis was converted into an interactive Power BI dashboard focused on
 
 ---
 
-## 🔎 Key Insights
+##  Key Insights
 
 ### 1. Sales Growth
 
@@ -365,7 +365,7 @@ RFM analysis provides a way to identify different customer groups based on **rec
 
 ---
 
-## 💡 Business Recommendations
+##  Business Recommendations
 
 Based on the analysis, the main areas for improvement are:
 
@@ -394,7 +394,7 @@ Based on the analysis, the main areas for improvement are:
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
 ecommerce-analytics/
@@ -420,7 +420,7 @@ ecommerce-analytics/
 
 ---
 
-## 🚀 How to Explore the Project
+##  How to Explore the Project
 
 ### 1. SQL Analysis
 
@@ -452,7 +452,7 @@ data/
 
 ---
 
-## 📌 Project Outcome
+##  Project Outcome
 
 This project brings together **data preparation, SQL analysis, business intelligence and visualization** to provide a consolidated view of e-commerce performance.
 
@@ -462,7 +462,7 @@ The analysis helps identify:
 
 ---
 
-## 👤 Author
+##  Author
 
 ### Rohit Kumar
 
