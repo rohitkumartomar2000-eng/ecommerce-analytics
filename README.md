@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 About the Project
+##  About the Project
 
 This project analyzes the **Brazilian Olist E-Commerce dataset** to understand how an e-commerce marketplace is performing across sales, customers, products, sellers, payments, reviews and delivery operations.
 
